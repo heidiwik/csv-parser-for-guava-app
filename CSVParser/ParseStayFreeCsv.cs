@@ -77,7 +77,7 @@ public class ParseStayFreeCsv
     }
 
     /// <summary>
-    /// Gets the header row from the first line of the CSV data, parsing it to extract only the date values by skipping the first two columns and the last column.
+    /// Gets the header row from the first line of the CSV data, parsing it to extract only the date values
     /// </summary>
     /// <param name="headerLine">The first line of the CSV data.</param>
     /// <returns>A list of date values from the header row.</returns>
@@ -89,8 +89,13 @@ public class ParseStayFreeCsv
         // remove first two columns and last column to get only date values
         headerRow = headerRow?.Skip(2).ToList().Take(headerRow.Count - 3).ToList();
 
+        // convert date format
+        headerRow = CsvParser.Utils.ConvertDateFormat(headerRow);
+
         return headerRow;
     }
+
+
 
     /// <summary>
     /// Parses the CSV data to find the last row containing "Total Usage" and extracts the time values, skipping the first two columns and the last column.

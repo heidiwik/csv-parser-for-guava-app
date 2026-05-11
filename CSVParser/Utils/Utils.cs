@@ -99,5 +99,23 @@ namespace CsvParser
 
             return JsonConvert.SerializeObject(objects, Newtonsoft.Json.Formatting.Indented);
         }
+
+
+        /// <summary>
+        /// Converts date strings in the input list from formats like "May 2, 2026" to "yyyy-MM-dd" format.
+        /// </summary>
+        /// <param name="row">A list of strings potentially containing date values to reformat.</param>
+        /// <returns>A list of strings with date values reformatted to "yyyy-MM-dd", or null if the input is null.</returns>
+        public static List<string>? ConvertDateFormat(List<string>? row, string dateFormat = "yyyy-MM-dd")
+        {
+            return row?.Select(value =>
+            {
+                if (DateTime.TryParse(value, out var date))
+                {
+                    return date.ToString(dateFormat);
+                }
+                return value;
+            }).ToList();
+        }
     }
 }
