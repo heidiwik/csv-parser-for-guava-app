@@ -8,8 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using Microsoft.VisualBasic.FileIO;
-using System.Data;
 
 namespace CSVParser;
 
@@ -23,7 +21,7 @@ public class ParseStayFreeCsv
     }
 
     [Function("ParseStayFreeCsv")]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get","post")] HttpRequest req)
     {
         var debug = req.Query["debug"].ToString() == 1.ToString() ? true : false;
 
@@ -34,14 +32,14 @@ public class ParseStayFreeCsv
             return new BadRequestObjectResult("No valid CSV content found in the request.");
         }
 
-        var parsedData = ParseCsvData(csv);
+        var totalUsageValues = GetTotalUsageValues(csv);
 
-        if (parsedData == null)
+        if (totalUsageValues == null)
         {
             return new BadRequestObjectResult("Failed to parse CSV data.");
         }
 
-        var parsedDataAsJson = ParseDataAsJson(parsedData);
+        var parsedDataAsJson = CsvParser.Utils.ParseDataAsJson(totalUsageValues);
 
         return new OkObjectResult(parsedDataAsJson);
     }
@@ -51,7 +49,7 @@ public class ParseStayFreeCsv
     /// </summary>
     /// <param name="csvData">The CSV data as a string.</param>
     /// <returns>A dictionary with the header as key and total usage as value, with time values converted to total minutes.</returns>
-    private static Dictionary<string, string>? ParseCsvData(string csvData)
+    private static Dictionary<string, string>? GetTotalUsageValues(string csvData)
     {
         try
         {
@@ -59,10 +57,9 @@ public class ParseStayFreeCsv
             var lines = csvData.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
             // get header row with date values only
-            var headerRow = CsvParser.Utils.ParseHeaderRow(lines[0]);
-            headerRow = headerRow.Skip(2).ToList().Take(headerRow.Count - 1).ToList();
+            var headerRow = GetHeaderRow(lines[0]);
 
-            // get total usage row with time values only
+            // get total usage row
             var totalUsageRow = GetTotalUsageRow(lines);
 
             // create dictionary with header as key and total usage as value
@@ -80,16 +77,20 @@ public class ParseStayFreeCsv
     }
 
     /// <summary>
-    /// Parses the data formats it as JSON strings specific for data source type "StayFree". 
+    /// Gets the header row from the first line of the CSV data, parsing it to extract only the date values by skipping the first two columns and the last column.
     /// </summary>
-    /// <param name="parsedData">The parsed data dictionary.</param>
-    /// <param name="dataSource">The data source type.</param>
-    /// <returns>An array of JSON strings representing the parsed data.</returns>
-    private string[] ParseDataAsJson(Dictionary<string, string>? parsedData)
+    /// <param name="headerLine">The first line of the CSV data.</param>
+    /// <returns>A list of date values from the header row.</returns>
+    private static List<string>? GetHeaderRow(string headerLine)
     {
-        return parsedData?.Select(kv => $"{{Date/time: {kv.Key}, Total: {kv.Value}}}").ToArray();
-    }
+        // parse values
+        var headerRow = CsvParser.Utils.ParseCsvRow(headerLine);
 
+        // remove first two columns and last column to get only date values
+        headerRow = headerRow?.Skip(2).ToList().Take(headerRow.Count - 3).ToList();
+
+        return headerRow;
+    }
 
     /// <summary>
     /// Parses the CSV data to find the last row containing "Total Usage" and extracts the time values, skipping the first two columns and the last column.

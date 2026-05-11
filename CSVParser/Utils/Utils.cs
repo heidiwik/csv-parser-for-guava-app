@@ -68,19 +68,36 @@ namespace CsvParser
         }
 
         /// <summary>
-        /// Parses the header row of the CSV to extract the date columns
+        /// Parses the row of the CSV with commas as delimiters and handles quoted fields that may contain commas.
         /// </summary>
-        /// <param name="headerLine">The header line of the CSV file.</param>
+        /// <param name="line">The line of the CSV file.</param>
         /// <returns>A list of containing date columns in header line.</returns>
-        public static List<string>? ParseHeaderRow(string headerLine)
+        public static List<string>? ParseCsvRow(string line)
         {
-            using var parser = new TextFieldParser(new System.IO.StringReader(headerLine));
+            using var parser = new TextFieldParser(new System.IO.StringReader(line));
             parser.SetDelimiters(",");
             parser.HasFieldsEnclosedInQuotes = true;
 
             string[] fields = parser.ReadFields();
 
             return fields.ToList();
+        }
+
+
+        /// <summary>
+        /// Parses the data as JSON for Guava App format 
+        /// </summary>
+        /// <param name="parsedData">The parsed data dictionary.</param>
+        /// <returns>An dictionary of JSON strings representing the parsed data.</returns>
+        public static string ParseDataAsJson(Dictionary<string, string>? parsedData)
+        {
+            var objects = parsedData?.Select(kv => new Dictionary<string, object>
+            {
+                ["Date/time"] = kv.Key,
+                ["Value"] = int.TryParse(kv.Value, out var n) ? n : 0
+            }).ToArray();
+
+            return JsonConvert.SerializeObject(objects, Newtonsoft.Json.Formatting.Indented);
         }
     }
 }
