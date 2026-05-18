@@ -2,6 +2,8 @@
 
 An Azure Function (v4, .NET 8) that parses StayFree CSV reports and returns the data as JSON formatted for the Guava App.
 
+## NOTE! Not working at the moment
+
 ## What It Does
 
 - Accepts a CSV file via HTTP POST (base64-encoded in the request body) or reads a local file in debug mode
